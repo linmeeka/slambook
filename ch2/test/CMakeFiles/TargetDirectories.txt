@@ -1,0 +1,3 @@
+/home/kylin/git/slambook/ch2/test/CMakeFiles/edit_cache.dir
+/home/kylin/git/slambook/ch2/test/CMakeFiles/rebuild_cache.dir
+/home/kylin/git/slambook/ch2/test/CMakeFiles/HelloSLAM.dir
