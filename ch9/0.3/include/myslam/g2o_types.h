@@ -44,8 +44,9 @@ class EdgeProjectXYZ2UVPoseOnly:public g2o::BaseUnaryEdge <2,Eigen::Vector2d,g2o
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
+    // 计算误差
     virtual void computeError();
+    // 计算线性增量，即雅克比矩阵J
     virtual void linearizeOplus();
 
     virtual bool read(std::istream& in){}

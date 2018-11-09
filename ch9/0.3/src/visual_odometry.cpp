@@ -152,6 +152,7 @@ void VisualOdometry::poseEstimationPnP()
              0, ref_->camera_->fy_, ref_->camera_->cy_,
              0, 0, 1);
     //输出
+    // rvec ，tvec 估计的旋转矩阵和平移矩阵
     Mat rvec, tvec, inliers;
     cv::solvePnPRansac(pts3d, pts2d, K, Mat(), rvec, tvec, false, 100, 4.0, 0.99, inliers);
     num_inliers_ = inliers.rows;
@@ -168,22 +169,29 @@ void VisualOdometry::poseEstimationPnP()
     g2o::SparseOptimizer optimizer;
     optimizer.setAlgorithm(solver);
 
+    // 优化变量，一个顶点，位姿
     g2o::VertexSE3Expmap* pose=new g2o::VertexSE3Expmap();
     pose->setId(0);
+    // 设定初值
     pose->setEstimate(g2o::SE3Quat(
         T_c_r_estimated_.rotation_matrix(),
         T_c_r_estimated_.translation()
     ));
     optimizer.addVertex(pose);
 
+    // 边
     for(int i=0;i<inliers.rows;i++)
     {
+        // 对每一个内点
         int index=inliers.at<int>(i,0);
         EdgeProjectXYZ2UVPoseOnly* edge=new EdgeProjectXYZ2UVPoseOnly();
         edge->setId(i);
+        // 一元边，只连接位姿顶点
         edge->setVertex(0,pose);
         edge->camera_=curr_->camera_.get();
+        // 三维点坐标，把它重投影和下面的measurement计算误差
         edge->point_=Vector3d(pts3d[index].x,pts3d[index].y,pts3d[index].z);
+        // 观测到的值
         edge->setMeasurement(Vector2d(pts2d[index].x,pts2d[index].y));
         edge->setInformation(Eigen::Matrix2d::Identity());
         optimizer.addEdge(edge);

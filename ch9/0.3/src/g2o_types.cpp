@@ -12,7 +12,7 @@ void EdgeProjectXYZRGBD::computeError()
 void EdgeProjectXYZRGBD::linearizeOplus()
 {
     g2o::VertexSE3Expmap* pose = static_cast<g2o::VertexSE3Expmap *> ( _vertices[1] );
-    g2o::SE3Quat T ( pose->estimate() );
+    g2o::SE3Quat T ( pose->estimate() );  
     g2o::VertexSBAPointXYZ* point = static_cast<g2o::VertexSBAPointXYZ*> ( _vertices[0] );
     Eigen::Vector3d xyz = point->estimate();
     Eigen::Vector3d xyz_trans = T.map ( xyz );
@@ -81,10 +81,12 @@ void EdgeProjectXYZRGBDPoseOnly::linearizeOplus()
     _jacobianOplusXi ( 2,5 ) = -1;
 }
 
+// 重投影误差
 void EdgeProjectXYZ2UVPoseOnly::computeError()
 {
     const g2o::VertexSE3Expmap* pose = static_cast<const g2o::VertexSE3Expmap*> ( _vertices[0] );
     _error = _measurement - camera_->camera2pixel ( 
+        // 位姿估计，重投影到2d
         pose->estimate().map(point_) );
 }
 
