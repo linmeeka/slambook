@@ -113,7 +113,7 @@ void VisualOdometry::featureMatching()
     }
 
     // 当前帧特征点的描述子，与地图特征点的描述子匹配
-    matche_flann_.match(desp_map, descriptors_curr_, matches);
+    matcher_flann_.match(desp_map, descriptors_curr_, matches);
 
     //定义lambda函数，从matches里，按照其中元素的cv::DMatch.distance找到最小距离的元素
     //得到它的最小距离
@@ -213,6 +213,8 @@ void VisualOdometry::poseEstimationPnP()
     T_c_w_estimated_ = SE3(
         pose->estimate().rotation(),
         pose->estimate().translation());
+    cout<<"T_c_w_estimated_: "<<endl<<T_c_w_estimated_.matrix()<<endl;
+
 }
 
 bool VisualOdometry::checkEstimatedPose()
@@ -288,10 +290,10 @@ void VisualOdometry::addMapPoints()
         double d = ref_->findDepth(keypoints_curr_[i]);
         if (d < 0)
             continue;
-        Vector3d p_world = ref_->camera->pixel2world(
+        Vector3d p_world = ref_->camera_->pixel2world(
             Vector2d(keypoints_curr_[i].pt.x, keypoints_curr_[i].pt.y), curr_->T_c_w_, d);
         // 挪到世界坐标系下
-        Vector3d n = p_world - ref->getCamCenter();
+        Vector3d n = p_world - ref_->getCamCenter();
         n.normalize();
         MapPoint::Ptr map_point = MapPoint::createMapPoint(
             p_world, n, descriptors_curr_.row(i).clone(), curr_.get());
@@ -337,12 +339,12 @@ void VisualOdometry::optimizeMap()
     }
     else
         map_point_erase_ratio_ = 0.1;
-    cout << "map points: " << map_points_.size() << endl;
+    cout << "map points: " << map_->map_points_.size() << endl;
 }
 
 double VisualOdometry::getViewAngle(Frame::Ptr frame, MapPoint::Ptr point)
 {
-    vector3d n = point->pos_ - frame->getCamCenter();
+    Vector3d n = point->pos_ - frame->getCamCenter();
     n.normalize();
     return acos(n.transpose() * point->norm_);
 }
