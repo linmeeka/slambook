@@ -57,19 +57,26 @@ int main( int argc, char** argv )
         vector<unsigned char> status;
         vector<float> error; 
         chrono::steady_clock::time_point t1 = chrono::steady_clock::now();
+        // next_keypoints:output keypoints
+        // status: prev_keypoints是否找到
         cv::calcOpticalFlowPyrLK( last_color, color, prev_keypoints, next_keypoints, status, error );
         chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
         chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double>>( t2-t1 );
         cout<<"LK Flow use time："<<time_used.count()<<" seconds."<<endl;
         // 把跟丢的点删掉
         int i=0; 
+        // 维护总的特征点list
         for ( auto iter=keypoints.begin(); iter!=keypoints.end(); i++)
         {
+            // 若没找到
             if ( status[i] == 0 )
             {
+                // 从list里删除
                 iter = keypoints.erase(iter);
                 continue;
             }
+            //若找到了
+            // ？？？ 为啥把list类型的迭代器指向了vector，又指向下一个找到的？？？
             *iter = next_keypoints[i];
             iter++;
         }

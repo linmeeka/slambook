@@ -7,6 +7,7 @@
 #include "tools/rotation.h"
 #include "common/projection.h"
 
+// 相机参数节点，内参+外参，共9个未知量
 class VertexCameraBAL : public g2o::BaseVertex<9,Eigen::VectorXd>
 {
 public:
@@ -25,6 +26,7 @@ public:
 
     virtual void setToOriginImpl() {}
 
+    //更新变量节点
     virtual void oplusImpl ( const double* update )
     {
         Eigen::VectorXd::ConstMapType v ( update, VertexCameraBAL::Dimension );
@@ -33,7 +35,7 @@ public:
 
 };
 
-
+// 路标点节点，共3个未知量
 class VertexPointBAL : public g2o::BaseVertex<3, Eigen::Vector3d>
 {
 public:
@@ -52,6 +54,7 @@ public:
 
     virtual void setToOriginImpl() {}
 
+    //更新变量节点
     virtual void oplusImpl ( const double* update )
     {
         Eigen::Vector3d::ConstMapType v ( update );
@@ -59,6 +62,7 @@ public:
     }
 };
 
+//定义边，表示代价函数
 class EdgeObservationBAL : public g2o::BaseBinaryEdge<2, Eigen::Vector2d,VertexCameraBAL, VertexPointBAL>
 {
 public:
@@ -75,6 +79,7 @@ public:
         return false;
     }
 
+    // 定义 计算相机点和路标点之间的误差
     virtual void computeError() override   // The virtual function comes from the Edge base class. Must define if you use edge.
     {
         const VertexCameraBAL* cam = static_cast<const VertexCameraBAL*> ( vertex ( 0 ) );
@@ -84,6 +89,7 @@ public:
 
     }
 
+    // 重写运算符()0
     template<typename T>
     bool operator() ( const T* camera, const T* point, T* residuals ) const
     {
@@ -113,6 +119,7 @@ public:
         double *parameters[] = { const_cast<double*> ( cam->estimate().data() ), const_cast<double*> ( point->estimate().data() ) };
         double *jacobians[] = { dError_dCamera.data(), dError_dPoint.data() };
         double value[Dimension];
+        //自动求导
         bool diffState = BalAutoDiff::Differentiate ( *this, parameters, Dimension, value, jacobians );
 
         // copy over the Jacobians (convert row-major -> column-major)

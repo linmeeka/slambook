@@ -10,6 +10,7 @@ struct CURVE_FITTING_COST
 {
     CURVE_FITTING_COST ( double x, double y ) : _x ( x ), _y ( y ) {}
     // 残差的计算
+    // 模板函数？
     template <typename T>
     bool operator() (
         const T* const abc,     // 模型参数，有3维
@@ -48,8 +49,8 @@ int main ( int argc, char** argv )
     {
         problem.AddResidualBlock (     // 向问题中添加误差项
         // 使用自动求导，模板参数：误差类型，输出维度，输入维度，维数要与前面struct中一致
-            new ceres::AutoDiffCostFunction<CURVE_FITTING_COST, 1, 3> ( 
-                new CURVE_FITTING_COST ( x_data[i], y_data[i] )
+            new ceres::AutoDiffCostFunction<CURVE_FITTING_COST, 1, 3> ( // 求导
+                new CURVE_FITTING_COST ( x_data[i], y_data[i] ) //向计算误差的结构喂数据 误差
             ),
             nullptr,            // 核函数，这里不使用，为空
             abc                 // 待估计参数

@@ -148,20 +148,24 @@ int main( int argc, char** argv )
     }
     cout<<"read total "<<color_image_files.size()<<" files."<<endl;
     
-    // 第一张图
+    // 第一张图，作为参考帧 
     Mat ref = imread( color_image_files[0], 0 );                // gray-scale image 
     SE3 pose_ref_TWC = poses_TWC[0];
     double init_depth   = 3.0;    // 深度初始值
     double init_cov2    = 3.0;    // 方差初始值 
+    // 初始化深度图和方差，为图像大小的矩阵
     Mat depth( height, width, CV_64F, init_depth );             // 深度图
     Mat depth_cov( height, width, CV_64F, init_cov2 );          // 深度图方差 
     
+    //对每一张图像
     for ( int index=1; index<color_image_files.size(); index++ )
     {
         cout<<"*** loop "<<index<<" ***"<<endl;
+        // 读入当前图像和位姿参数
         Mat curr = imread( color_image_files[index], 0 );       
         if (curr.data == nullptr) continue;
         SE3 pose_curr_TWC = poses_TWC[index];
+        // 得到curr到ref的转换矩阵
         SE3 pose_T_C_R = pose_curr_TWC.inverse() * pose_ref_TWC; // 坐标转换关系： T_C_W * T_W_R = T_C_R 
         update( ref, curr, pose_T_C_R, depth, depth_cov );
         plotDepth( depth );
@@ -207,6 +211,7 @@ bool readDatasetFiles(
 bool update(const Mat& ref, const Mat& curr, const SE3& T_C_R, Mat& depth, Mat& depth_cov )
 {
 #pragma omp parallel for
+    // 搜索整个图像，因为块是Border大，这么写防止越界。
     for ( int x=boarder; x<width-boarder; x++ )
 #pragma omp parallel for
         for ( int y=boarder; y<height-boarder; y++ )
@@ -245,16 +250,18 @@ bool epipolarSearch(
     const double& depth_mu, const double& depth_cov, 
     Vector2d& pt_curr )
 {
+    // ref上的(x,y)处像素对应到3d
     Vector3d f_ref = px2cam( pt_ref );
     f_ref.normalize();
     Vector3d P_ref = f_ref*depth_mu;	// 参考帧的 P 向量
     
+    // 投影到curr上的对应像素，确定极线的范围
     Vector2d px_mean_curr = cam2px( T_C_R*P_ref ); // 按深度均值投影的像素
-    double d_min = depth_mu-3*depth_cov, d_max = depth_mu+3*depth_cov;
+    double d_min = depth_mu-3*depth_cov, d_max = depth_mu+3*depth_cov;//深度的范围
     if ( d_min<0.1 ) d_min = 0.1;
     Vector2d px_min_curr = cam2px( T_C_R*(f_ref*d_min) );	// 按最小深度投影的像素
     Vector2d px_max_curr = cam2px( T_C_R*(f_ref*d_max) );	// 按最大深度投影的像素
-    
+    // 确定极线
     Vector2d epipolar_line = px_max_curr - px_min_curr;	// 极线（线段形式）
     Vector2d epipolar_direction = epipolar_line;		// 极线方向 
     epipolar_direction.normalize();
@@ -267,7 +274,7 @@ bool epipolarSearch(
     // 在极线上搜索，以深度均值点为中心，左右各取半长度
     double best_ncc = -1.0;
     Vector2d best_px_curr; 
-    for ( double l=-half_length; l<=half_length; l+=0.7 )  // l+=sqrt(2) 
+    for ( double l=-half_length; l<=half_length; l+=0.7 )  // l+=sqrt(2)   按着像素的对角线走？
     {
         Vector2d px_curr = px_mean_curr + l*epipolar_direction;  // 待匹配点
         if ( !inside(px_curr) )
@@ -292,7 +299,7 @@ double NCC (
 )
 {
     // 零均值-归一化互相关
-    // 先算均值
+    // 先算均值，ref和curr块区域内的均值
     double mean_ref = 0, mean_curr = 0;
     vector<double> values_ref, values_curr; // 参考帧和当前帧的均值
     for ( int x=-ncc_window_size; x<=ncc_window_size; x++ )
@@ -310,19 +317,22 @@ double NCC (
         
     mean_ref /= ncc_area;
     mean_curr /= ncc_area;
-    
+    // 去均值化
 	// 计算 Zero mean NCC
     double numerator = 0, demoniator1 = 0, demoniator2 = 0;
     for ( int i=0; i<values_ref.size(); i++ )
     {
+        // 分子部分
         double n = (values_ref[i]-mean_ref) * (values_curr[i]-mean_curr);
         numerator += n;
+        // 分母部分
         demoniator1 += (values_ref[i]-mean_ref)*(values_ref[i]-mean_ref);
         demoniator2 += (values_curr[i]-mean_curr)*(values_curr[i]-mean_curr);
     }
     return numerator / sqrt( demoniator1*demoniator2+1e-10 );   // 防止分母出现零
 }
 
+// 使用参考帧的(x,y)像素和当前帧找到的最对应的pt_curr像素，更新深度图和协方差矩阵
 bool updateDepthFilter(
     const Vector2d& pt_ref, 
     const Vector2d& pt_curr, 

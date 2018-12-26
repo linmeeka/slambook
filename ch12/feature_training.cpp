@@ -20,19 +20,30 @@ int main( int argc, char** argv )
     vector<Mat> images; 
     for ( int i=0; i<10; i++ )
     {
-        string path = "./data/"+to_string(i+1)+".png";
+        string path = "../data/"+to_string(i+1)+".png";
         images.push_back( imread(path) );
     }
     // detect ORB features
     cout<<"detecting ORB features ... "<<endl;
-    Ptr< Feature2D > detector = ORB::create();
+    //Ptr< Feature2D > detector = ORB::create();
+    Ptr<FeatureDetector> detector = ORB::create();
+    
+
     vector<Mat> descriptors;
     for ( Mat& image:images )
     {
         vector<KeyPoint> keypoints; 
         Mat descriptor;
-        detector->detectAndCompute( image, Mat(), keypoints, descriptor );
+        Ptr<DescriptorExtractor> descriptor1 = ORB::create();
+        detector->detect ( image,keypoints );
+        descriptor1->compute ( image,keypoints, descriptor );
+        Mat outimg1;
+        drawKeypoints( image,keypoints, outimg1, Scalar::all(-1), DrawMatchesFlags::DEFAULT );
+        imshow("ORB特征点",outimg1);
+
+       // detector->detectAndCompute( image, Mat(), keypoints, descriptor );
         descriptors.push_back( descriptor );
+       // cout<<descriptor<<endl;
     }
     
     // create vocabulary 

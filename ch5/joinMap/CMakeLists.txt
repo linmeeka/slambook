@@ -12,8 +12,9 @@ include_directories( ${OpenCV_INCLUDE_DIRS} )
 include_directories( "/usr/include/eigen3/" )
 
 # pcl 
-find_package( PCL REQUIRED COMPONENT common io )
+find_package( PCL 1.2 REQUIRED COMPONENT common io visualization)
 include_directories( ${PCL_INCLUDE_DIRS} )
+list(REMOVE_ITEM PCL_LIBRARIES "vtkproj4")
 add_definitions( ${PCL_DEFINITIONS} )
 
 add_executable( joinMap joinMap.cpp )

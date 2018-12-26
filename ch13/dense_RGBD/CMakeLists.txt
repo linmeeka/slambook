@@ -18,9 +18,9 @@ add_definitions( ${PCL_DEFINITIONS} )
 # octomap 
 find_package( octomap REQUIRED )
 include_directories( ${OCTOMAP_INCLUDE_DIRS} )
-
+list(REMOVE_ITEM PCL_LIBRARIES "vtkproj4")
 add_executable( pointcloud_mapping pointcloud_mapping.cpp )
 target_link_libraries( pointcloud_mapping ${OpenCV_LIBS} ${PCL_LIBRARIES} )
-
+list(REMOVE_ITEM PCL_LIBRARIES "vtkproj4")
 add_executable( octomap_mapping octomap_mapping.cpp )
 target_link_libraries( octomap_mapping ${OpenCV_LIBS} ${PCL_LIBRARIES} ${OCTOMAP_LIBRARIES} )

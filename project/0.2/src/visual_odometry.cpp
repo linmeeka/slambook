@@ -148,10 +148,12 @@ void VisualOdometry::setRef3DPoints()
         double d = ref_->findDepth(keypoints_curr_[i]);               
         if ( d > 0)
         {
+//	   cout<<keypoints_curr_[i].pt.x<<' '<<keypoints_curr_[i].pt.y<<' '<<d<<' ';
             Vector3d p_cam = ref_->camera_->pixel2camera(
                 Vector2d(keypoints_curr_[i].pt.x, keypoints_curr_[i].pt.y), d
             );
             pts_3d_ref_.push_back( cv::Point3f( p_cam(0,0), p_cam(1,0), p_cam(2,0) ));
+//	cout<<p_cam(0, 0)<<' '<<p_cam(1, 0)<<' '<<p_cam(2, 0)<<endl;
             descriptors_ref_.push_back(descriptors_curr_.row(i));
         }
     }

@@ -85,6 +85,8 @@ def associate(first_list, second_list,offset,max_difference):
     """
     first_keys = first_list.keys()
     second_keys = second_list.keys()
+    first_keys = list(first_keys)
+    second_keys = list(second_keys)
     potential_matches = [(abs(a - (b + offset)), a, b) 
                          for a in first_keys 
                          for b in second_keys 
@@ -93,6 +95,8 @@ def associate(first_list, second_list,offset,max_difference):
     matches = []
     for diff, a, b in potential_matches:
         if a in first_keys and b in second_keys:
+            #del first_keys[a]
+            #del second_keys[b]
             first_keys.remove(a)
             second_keys.remove(b)
             matches.append((a, b))

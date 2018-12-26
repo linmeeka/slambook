@@ -45,6 +45,7 @@ int main ( int argc, char** argv )
 
     myslam::Camera::Ptr camera ( new myslam::Camera );
     
+	cout<<camera->depth_scale_<<endl;
     // visualization
     cv::viz::Viz3d vis("Visual Odometry");
     cv::viz::WCoordinateSystem world_coor(1.0), camera_coor(0.5);
@@ -69,7 +70,6 @@ int main ( int argc, char** argv )
         pFrame->color_ = color;
         pFrame->depth_ = depth;
         pFrame->time_stamp_ = rgb_times[i];
-
         boost::timer timer;
         vo->addFrame ( pFrame );
         cout<<"VO costs time: "<<timer.elapsed()<<endl;
@@ -79,6 +79,10 @@ int main ( int argc, char** argv )
         SE3 Tcw = pFrame->T_c_w_.inverse();
         
         // show the map and the camera pose 
+cout<<Tcw.rotation_matrix()(0, 0)<<' '<<Tcw.rotation_matrix()(0, 1)<<' '<<Tcw.rotation_matrix()(0, 2)<<' '
+        <<Tcw.rotation_matrix()(1, 0)<<' '<<Tcw.rotation_matrix()(1, 1)<<' '<<Tcw.rotation_matrix()(1, 2)<<' '
+        <<Tcw.rotation_matrix()(2, 0)<<' '<<Tcw.rotation_matrix()(2, 1)<<' '<<Tcw.rotation_matrix()(2, 2)<<' '
+        <<endl;
         cv::Affine3d M(
             cv::Affine3d::Mat3( 
                 Tcw.rotation_matrix()(0,0), Tcw.rotation_matrix()(0,1), Tcw.rotation_matrix()(0,2),
@@ -89,7 +93,7 @@ int main ( int argc, char** argv )
                 Tcw.translation()(0,0), Tcw.translation()(1,0), Tcw.translation()(2,0)
             )
         );
-        
+	cout<<Tcw.translation()(0, 0)<<' '<<Tcw.translation()(1, 0)<<' '<<Tcw.translation()(2, 0)<<endl;        
         cv::imshow("image", color );
         cv::waitKey(1);
         vis.setWidgetPose( "Camera", M);

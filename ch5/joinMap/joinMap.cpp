@@ -8,7 +8,6 @@ using namespace std;
 #include <pcl/point_types.h> 
 #include <pcl/io/pcd_io.h> 
 #include <pcl/visualization/pcl_visualizer.h>
-
 int main( int argc, char** argv )
 {
     vector<cv::Mat> colorImgs, depthImgs;    // 彩色图和深度图

@@ -33,6 +33,7 @@ struct Measurement
     float grayscale;
 };
 
+// 使用相机内参把2d点回复到相机坐标系下的3d点。
 inline Eigen::Vector3d project2Dto3D ( int x, int y, int d, float fx, float fy, float cx, float cy, float scale )
 {
     float zz = float ( d ) /scale;
@@ -41,6 +42,7 @@ inline Eigen::Vector3d project2Dto3D ( int x, int y, int d, float fx, float fy, 
     return Eigen::Vector3d ( xx, yy, zz );
 }
 
+// 将3d点投影到2d
 inline Eigen::Vector2d project3Dto2D ( float x, float y, float z, float fx, float fy, float cx, float cy )
 {
     float u = fx*x/z+cx;
@@ -63,12 +65,15 @@ public:
 
     EdgeSE3ProjectDirect() {}
 
+    //输入：三维点，内参，新灰度图
     EdgeSE3ProjectDirect ( Eigen::Vector3d point, float fx, float fy, float cx, float cy, cv::Mat* image )
         : x_world_ ( point ), fx_ ( fx ), fy_ ( fy ), cx_ ( cx ), cy_ ( cy ), image_ ( image )
     {}
 
+    // 重写计算error，定义光度误差
     virtual void computeError()
     {
+        // 得到点坐标，转为2d
         const VertexSE3Expmap* v  =static_cast<const VertexSE3Expmap*> ( _vertices[0] );
         Eigen::Vector3d x_local = v->estimate().map ( x_world_ );
         float x = x_local[0]*fx_/x_local[2] + cx_;
@@ -94,8 +99,9 @@ public:
             return;
         }
         VertexSE3Expmap* vtx = static_cast<VertexSE3Expmap*> ( _vertices[0] );
+        //q
         Eigen::Vector3d xyz_trans = vtx->estimate().map ( x_world_ );   // q in book
-
+        //u
         double x = xyz_trans[0];
         double y = xyz_trans[1];
         double invz = 1.0/xyz_trans[2];

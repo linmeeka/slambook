@@ -41,16 +41,19 @@ typedef g2o::BlockSolver<g2o::BlockSolverTraits<9,3> > BalBlockSolver;
 // set up the vertexs and edges for the bundle adjustment. 
 void BuildProblem(const BALProblem* bal_problem, g2o::SparseOptimizer* optimizer, const BundleParams& params)
 {
+    //获取变量的个数和自由度
     const int num_points = bal_problem->num_points();
     const int num_cameras = bal_problem->num_cameras();
     const int camera_block_size = bal_problem->camera_block_size();
     const int point_block_size = bal_problem->point_block_size();
 
+    // 初始化相机参数节点
     // Set camera vertex with initial value in the dataset.
     const double* raw_cameras = bal_problem->cameras();
     for(int i = 0; i < num_cameras; ++i)
     {
         ConstVectorRef temVecCamera(raw_cameras + camera_block_size * i,camera_block_size);
+        
         VertexCameraBAL* pCamera = new VertexCameraBAL();
         pCamera->setEstimate(temVecCamera);   // initial value for the camera i..
         pCamera->setId(i);                    // set id for each camera vertex 
@@ -60,6 +63,7 @@ void BuildProblem(const BALProblem* bal_problem, g2o::SparseOptimizer* optimizer
         
     }
 
+    // 初始化路标节点
     // Set point vertex with initial value in the dataset. 
     const double* raw_points = bal_problem->points();
     // const int point_block_size = bal_problem->point_block_size();
@@ -71,10 +75,12 @@ void BuildProblem(const BALProblem* bal_problem, g2o::SparseOptimizer* optimizer
         pPoint->setId(j + num_cameras);     // each vertex should have an unique id, no matter it is a camera vertex, or a point vertex 
 
         // remeber to add vertex into optimizer..
+        // 使用schur消元
         pPoint->setMarginalized(true);
         optimizer->addVertex(pPoint);
     }
 
+    // 初始化边
     // Set edges for graph..
     const int  num_observations = bal_problem->num_observations();
     const double* observations = bal_problem->observations();   // pointer for the first observation..
@@ -83,6 +89,7 @@ void BuildProblem(const BALProblem* bal_problem, g2o::SparseOptimizer* optimizer
     {
         EdgeObservationBAL* bal_edge = new EdgeObservationBAL();
 
+        // 一个观测，对应着一个[位姿-路标]关系？
         const int camera_id = bal_problem->camera_index()[i]; // get id for the camera; 
         const int point_id = bal_problem->point_index()[i] + num_cameras; // get id for the point 
         
